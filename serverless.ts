@@ -33,6 +33,17 @@ const serverlessConfiguration: AWS = {
           }
         }
       ]
+    },
+    send: {
+      handler: 'handler.send',
+      events: [
+        {
+          http: {
+            method: 'post',
+            path: 'send',
+          }
+        }
+      ]
     }
   }
 }

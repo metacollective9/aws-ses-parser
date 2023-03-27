@@ -3,6 +3,7 @@ import 'source-map-support/register';
 import { S3 } from 'aws-sdk';
 import { downloadFromS3, uploadtoS3 } from './src/util/awsWrapper';
 import { simpleParser } from 'mailparser';
+import * as nodemailer from 'nodemailer';
 
 export const parseMail: Handler = async (event:SNSEvent) => {
   try {
@@ -62,3 +63,44 @@ const parse = async (email: string) => {
     }
   })
 }
+
+export const send: Handler = async (event) => {
+  try {
+
+    let body = JSON.parse(event.body);
+
+    let transporter = nodemailer.createTransport({
+      host: process.env.SMTP_URL,
+      port: parseInt(process.env.SMTP_PORT),
+      auth: {
+        user: process.env.SMTP_USERNAME,
+        pass: process.env.SMTP_PASSWORD
+      }
+    });
+    
+    let info = await transporter.sendMail({
+      from: `"${body.fromName}" ${body.from}`, 
+      to: body.to,
+      subject: body.subject, 
+      text: body.message,
+    });
+  
+  return {
+    statusCode: 200,
+    body: JSON.stringify(
+      {
+        message: 'Message sent successfully!',
+        data: {
+            messageId: info.messageId,
+            previewURL: nodemailer.getTestMessageUrl(info)
+        },
+      },
+      null,
+      2
+    ),
+  };
+
+  } catch (error) {
+    console.log(error);
+  }
+};
